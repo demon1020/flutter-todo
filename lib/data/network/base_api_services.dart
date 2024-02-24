@@ -8,5 +8,5 @@ abstract class BaseApiServices {
       {body, disableTokenValidityCheck = false});
 
   Future<Either<AppException, Q>> callGetAPI<Q, R>(String apiURL,
-      Map<String, String> headers, ComputeCallback<String, R> callback, {disableTokenValidityCheck = false});
+      Map<String, String> headers, ComputeCallback<String, R> callback);
 }

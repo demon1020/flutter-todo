@@ -1,5 +1,7 @@
 import '../../features/auth/model/users.dart';
+import '../../features/todo/view_model/add_todo_view_model.dart';
 import '../../features/todo/view_model/todo_view_model.dart';
+import '../../features/todo/view_model/edit_todo_view_model.dart';
 import '/core.dart';
 
 class Providers {
@@ -10,9 +12,9 @@ class Providers {
         initialData: null,
       ),
       ChangeNotifierProvider(create: (context) => AuthViewModel()),
-      ChangeNotifierProvider(create: (context) => UserViewModel()),
-      ChangeNotifierProvider(create: (context) => HomeViewViewModel()),
       ChangeNotifierProvider(create: (context) => TodoViewModel()),
+      ChangeNotifierProvider(create: (context) => AddTodoViewModel()),
+      ChangeNotifierProvider(create: (context) => EditTodoViewModel()),
     ];
     return _providers;
   }

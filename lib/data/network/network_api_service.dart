@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import '/core.dart';
 
 import 'package:dartz/dartz.dart';
@@ -9,10 +11,10 @@ class NetworkApiService extends BaseApiServices {
 
   @override
   Future<Either<AppException, Q>> callGetAPI<Q, R>(String apiURL,
-      Map<String, String> headers, ComputeCallback<String, R> callback, {disableTokenValidityCheck = false}) async {
+      Map<String, String> headers, ComputeCallback<String, R> callback) async {
     try {
-      print('apiURL : $apiURL');
-      print('headers : ${jsonEncode(headers)}');
+      log('apiURL : $apiURL');
+      log('headers : ${jsonEncode(headers)}');
       http.Response response = await http
           .get(Uri.parse(apiURL), headers: headers)
           .timeout(apiTimeOut);
@@ -34,9 +36,9 @@ class NetworkApiService extends BaseApiServices {
       Map<String, String> headers, ComputeCallback<String, R> callback,
       {body, disableTokenValidityCheck = false}) async {
     try {
-      print('apiURL : $apiURL');
-      print('headers : ${jsonEncode(headers)}');
-      print('body : ${jsonEncode(body)}');
+      log('apiURL : $apiURL');
+      log('headers : ${jsonEncode(headers)}');
+      log('body : ${jsonEncode(body)}');
       http.Response response = await http
           .post(Uri.parse(apiURL), body: body)
           .timeout(apiTimeOut);

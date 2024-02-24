@@ -66,6 +66,6 @@ class NotificationService {
     log("Notification clicked $message");
     if(message?.notification == null) return;
     if(navigatorKey.currentContext == null) return;
-    Navigator.of(navigatorKey.currentContext!).pushNamed(RoutesName.home);
+    Navigator.of(navigatorKey.currentContext!).pushNamed(RoutesName.todoView);
   }
 }

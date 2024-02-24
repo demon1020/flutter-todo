@@ -1,112 +1,30 @@
-import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:todo/features/todo/repository/todo_repository.dart';
 
-import '../../auth/repository/auth_repository.dart';
-import '../repository/todo_repository.dart';
+import '/core.dart';
 
 class TodoViewModel with ChangeNotifier {
-  late TodoRepository todoRepository = TodoRepository();
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  final AuthRepository _authService = AuthRepository();
+  Stream<QuerySnapshot>? todosStream;
+  String myUserName = '';
 
-  String get myUserName => _authService.getCurrentUser().toString();
-  String createdBy = '';
-  bool loading = false;
+  final _myRepo = TodoRepository();
 
-  setLoading(isLoading){
-    loading = isLoading;
+  init() async {
+    getUserName();
+    getTodos();
+  }
+
+  getUserName()async{
+    myUserName = await AuthRepository().getCurrentUser().toString();
     notifyListeners();
   }
 
-  createTodo() async {
-    setLoading(true);
-    notifyListeners();
-    Todo todo = Todo(
-      title: titleController.text,
-      description: descriptionController.text,
-      createdBy: myUserName,
-      lastEditedBy: myUserName,
-      timestamp: DateTime.now().toString(),
-      priority: ['low'],
-      editors: [myUserName],
-      status: false,
-    );
-    Map<String, dynamic> todoMap = todo.toMap();
-
-    if (todo.title.isNotEmpty) {
-      await todoRepository.createTodo(todoMap);
-    }
-    setLoading(false);
+  void getTodos() async {
+    todosStream = await _myRepo.getTodosStream();
     notifyListeners();
   }
-
-  getTodo(String todoId) async {
-    DocumentSnapshot snapshot = await todoRepository.getTodo(todoId);
-    Todo todo = Todo.fromSnapshot(snapshot);
-    titleController.text = todo.title;
-    descriptionController.text = todo.description;
-    log(todo.description);
+  void deleteTodo(String todoId) async {
+    await _myRepo.deleteTodo(todoId);
     notifyListeners();
-  }
-
-  updateTodo({required String todoId, required Todo todo}) async {
-    await todoRepository.updateTodo(todoId, todo);
-    notifyListeners();
-  }
-}
-
-class Todo {
-  String title;
-  String description;
-  String? createdBy;
-  String lastEditedBy;
-  String timestamp;
-  List<String>? priority;
-  List<String>? editors;
-  bool status;
-  bool isEditing;
-
-  Todo(
-      {required this.title,
-      required this.description,
-      this.createdBy,
-      required this.lastEditedBy,
-      required this.timestamp,
-      this.editors,
-      this.priority,
-      this.status = false,
-      this.isEditing = false,
-      });
-
-  factory Todo.fromSnapshot(DocumentSnapshot snapshot) {
-    Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-    return Todo(
-      title: data['title'],
-      description: data['description'],
-      createdBy: data['createdBy'],
-      lastEditedBy: data['lastEditedBy'],
-      timestamp: data['timestamp'],
-      priority: List<String>.from(data['priority'] ?? []),
-      editors: List<String>.from(data['editors'] ?? []),
-      status: data['status'],
-      isEditing: data['isEditing'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'title': title,
-      'description': description,
-      'createdBy': createdBy,
-      'lastEditedBy': lastEditedBy,
-      'timestamp': timestamp,
-      'priority': priority,
-      'editors': editors,
-      'status': status,
-      'isEditing': isEditing,
-    };
   }
 }

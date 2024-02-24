@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      initialRoute: RoutesName.wrapper,
+      initialRoute: RoutesName.wrapperView,
       onGenerateRoute: Routes.generateRoute,
       navigatorKey: navigatorKey,
     );
