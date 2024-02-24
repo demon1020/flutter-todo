@@ -67,6 +67,7 @@ class Todo {
   List<String>? priority;
   List<String>? editors;
   bool status;
+  bool isEditing;
 
   Todo(
       {required this.title,
@@ -76,7 +77,9 @@ class Todo {
       required this.timestamp,
       this.editors,
       this.priority,
-      this.status = false});
+      this.status = false,
+      this.isEditing = false,
+      });
 
   factory Todo.fromSnapshot(DocumentSnapshot snapshot) {
     Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
@@ -89,6 +92,7 @@ class Todo {
       priority: List<String>.from(data['priority'] ?? []),
       editors: List<String>.from(data['editors'] ?? []),
       status: data['status'],
+      isEditing: data['isEditing'],
     );
   }
 
@@ -102,6 +106,7 @@ class Todo {
       'priority': priority,
       'editors': editors,
       'status': status,
+      'isEditing': isEditing,
     };
   }
 }

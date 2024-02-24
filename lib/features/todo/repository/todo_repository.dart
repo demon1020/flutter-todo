@@ -139,6 +139,7 @@ class TodoRepository {
       'description': todo.description,
       'lastEditedBy': todo.lastEditedBy,
       'timestamp': todo.timestamp,
+      'isEditing': todo.isEditing,
     });
   }
 
