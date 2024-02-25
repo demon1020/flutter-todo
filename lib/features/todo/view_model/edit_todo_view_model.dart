@@ -121,7 +121,6 @@ class EditTodoViewModel with ChangeNotifier {
         "Task : ${titleController.text}",
         "This task is shared by $currentUser",
       );
-      log(response);
     }
     if (tempUsers.isNotEmpty) {
       Utils.toastMessage("Task Shared To : $tempUsers");

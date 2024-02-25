@@ -34,7 +34,7 @@ class TodoViewModel with ChangeNotifier {
       description: "",
       createdBy: currentUser,
       lastEditedBy: currentUser,
-      timestamp: DateTime.now().toString(),
+      timestamp: DateTime.now().toString().substring(0,19),
       priority: ['low'],
       editors: [currentUser],
       status: false,
