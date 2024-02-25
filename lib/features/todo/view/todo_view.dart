@@ -1,4 +1,9 @@
+import 'dart:developer';
+import 'package:timeago/timeago.dart' as timeago;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../model/todo.dart';
+import '../repository/todo_repository.dart';
 import '../view_model/todo_view_model.dart';
 import '/core.dart';
 
@@ -22,26 +27,44 @@ class _TodoViewState extends State<TodoView> {
   @override
   Widget build(BuildContext context) {
     final authViewModel = Provider.of<AuthViewModel>(context);
-    final provider = Provider.of<TodoViewModel>(context);
+    final todoViewModel = Provider.of<TodoViewModel>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Todo [${authViewModel.getUser()}]'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Todo App'),
+            Text(
+              authViewModel.getUser(),
+              style: TextStyle(
+                overflow: TextOverflow.ellipsis,
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
         automaticallyImplyLeading: false,
         actions: [
           InkWell(
-              onTap: () {
-                authViewModel.logout(context);
-                Navigator.pushNamed(context, RoutesName.loginView);
-              },
-              child: const Center(child: Text('Logout'))),
+            onTap: () {
+              authViewModel.logout(context);
+              Navigator.pushNamed(context, RoutesName.loginView);
+            },
+            child: const Center(
+              child: Text(
+                'Logout',
+              ),
+            ),
+          ),
           const SizedBox(
             width: 20,
           )
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: provider.todosStream,
+        stream: todoViewModel.todosStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -58,10 +81,11 @@ class _TodoViewState extends State<TodoView> {
           return ListView.builder(
             itemCount: snapshot.data!.docs.length,
             shrinkWrap: true,
-            padding: EdgeInsets.only(top: 16),
-            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.only(top: 10),
+            // physics: NeverScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               DocumentSnapshot document = snapshot.data!.docs[index];
+              Todo todo = Todo.fromSnapshot(document);
               return GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(
@@ -70,44 +94,42 @@ class _TodoViewState extends State<TodoView> {
                     RoutesName.editTodoView,
                   );
                 },
-                child: SizedBox(
-                  height: 120,
-                  child: Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: IconButton(
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.info,
-                                size: 30,
-                              )),
-                          title: Text('${document['title']}'),
-                          subtitle: Flexible(
-                            child: Text(
-                              '${document['description']}',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(overflow: TextOverflow.ellipsis),
-                            ),
-                          ),
-                          trailing: IconButton(
-                            onPressed: () {
-                              provider.deleteTodo(document.id);
-                            },
-                            icon: Icon(Icons.delete),
-                          ),
+                child: Card(
+                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: ListTile(
+                    leading: IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        todo.createdBy == todoViewModel.myUserName
+                            ? Icons.star
+                            : Icons.people_alt_rounded,
+                        size: 30,
+                      ),
+                    ),
+                    title: Text(
+                      todo.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        overflow: TextOverflow.ellipsis,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                      ),
+                    ),
+                    subtitle: Flexible(
+                      child: Text(
+                        timeago.format(DateTime.parse(todo.timestamp),
+                            locale: 'en_short'),
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        Container(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            document['timestamp'],
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () {
+                        todoViewModel.deleteTodo(document.id);
+                      },
+                      icon: Icon(Icons.delete),
                     ),
                   ),
                 ),
@@ -119,10 +141,28 @@ class _TodoViewState extends State<TodoView> {
       floatingActionButton: SizedBox(
         height: 60,
         child: ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+            late final TodoRepository _myRepo = TodoRepository();
+            Todo todo = Todo(
+              title: "",
+              description: "",
+              createdBy: myUserName,
+              lastEditedBy: myUserName,
+              timestamp: DateTime.now().toString(),
+              priority: ['low'],
+              editors: [myUserName],
+              status: false,
+              isEditing: true,
+            );
+            Map<String, dynamic> todoMap = todo.toMap();
+
+            DocumentReference ref = await _myRepo.createTodo(todoMap);
+            log(ref.id);
+
             Navigator.pushNamed(
+              arguments: ref.id,
               navigatorKey.currentContext!,
-              RoutesName.addTodoView,
+              RoutesName.editTodoView,
             );
           },
           child: Row(

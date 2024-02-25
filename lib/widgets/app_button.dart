@@ -13,12 +13,12 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return ElevatedButton(
+      onPressed: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 15),
         decoration: BoxDecoration(
-          color: AppColor.primary,
+          // color: AppColor.primary,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
@@ -27,7 +27,7 @@ class AppButton extends StatelessWidget {
               : Text(
                   text,
                   style: const TextStyle(
-                    color: AppColor.white,
+                    // color: AppColor.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),

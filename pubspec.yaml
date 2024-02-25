@@ -50,6 +50,8 @@ dependencies:
   intl: ^0.18.1
   uuid:
   timeago:
+  email_sender: ^1.3.3
+  dropdown_search:
 
 
   firebase_core: ^2.20.0

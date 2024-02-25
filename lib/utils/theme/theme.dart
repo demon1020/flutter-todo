@@ -13,7 +13,7 @@ class AppTheme {
       useMaterial3: true,
       colorSchemeSeed: color,
       // primarySwatch: color,
-      fontFamily: GoogleFonts.nunito().fontFamily,
+      // fontFamily: GoogleFonts.nunito().fontFamily,
       appBarTheme: const AppBarTheme(
         elevation: 1,
       ),

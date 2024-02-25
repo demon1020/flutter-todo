@@ -1,4 +1,3 @@
-import 'package:todo/features/todo/view/add_todo_view.dart';
 import '../../features/todo/view/edit_todo_view.dart';
 import '../../features/todo/view/todo_view.dart';
 import '../../wrapper.dart';
@@ -20,11 +19,6 @@ class Routes {
       case RoutesName.todoView:
         return MaterialPageRoute(
           builder: (BuildContext context) => const TodoView(),
-        );
-
-      case RoutesName.addTodoView:
-        return MaterialPageRoute(
-          builder: (BuildContext context) => AddTodoView(),
         );
 
       case RoutesName.editTodoView:

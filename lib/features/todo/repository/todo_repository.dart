@@ -19,7 +19,7 @@ class TodoRepository {
     return FirestoreConstants.todosCollection.doc(todoId).snapshots();
   }
 
-  Future createTodo(Map<String, dynamic> todo) async {
+  Future<DocumentReference<Object?>> createTodo(Map<String, dynamic> todo) async {
     return await FirestoreConstants.todosCollection.add(todo);
   }
 
@@ -34,6 +34,12 @@ class TodoRepository {
       'lastEditedBy': todo.lastEditedBy,
       'timestamp': todo.timestamp,
       'isEditing': todo.isEditing,
+    });
+  }
+
+  shareTodoToUsers (String todoId,List<String> users) async {
+    return FirestoreConstants.todosCollection.doc(todoId).update({
+      'editors': users,
     });
   }
 

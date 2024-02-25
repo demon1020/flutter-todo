@@ -1,8 +1,10 @@
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
+import '../../auth/model/users.dart';
 import '../../auth/repository/auth_repository.dart';
 import '../model/todo.dart';
 import '../repository/todo_repository.dart';
@@ -18,7 +20,13 @@ class EditTodoViewModel with ChangeNotifier {
 
   String createdBy = '';
   bool loading = false;
+  bool isSharing = false;
+  List<Users> dropItems = [];
 
+  setSharing(isLoading){
+    isSharing = isLoading;
+    notifyListeners();
+  }
   setLoading(isLoading){
     loading = isLoading;
     notifyListeners();
@@ -36,11 +44,13 @@ class EditTodoViewModel with ChangeNotifier {
       priority: ['low'],
       editors: [myUserName],
       status: false,
+      isEditing: true,
     );
     Map<String, dynamic> todoMap = todo.toMap();
 
     if (todo.title.isNotEmpty) {
-      await _myRepo.createTodo(todoMap);
+      DocumentReference ref = await _myRepo.createTodo(todoMap);
+      log(ref.id);
     }
     setLoading(false);
     notifyListeners();
@@ -65,5 +75,15 @@ class EditTodoViewModel with ChangeNotifier {
     notifyListeners();
   }
 
+  init(todoId) async{
+    getTodoDocumentStream(todoId);
+    QuerySnapshot snapshot = await _authService.getAllUsers();
+    dropItems = Users.parseUsersList(snapshot.docs);
+  }
+
+  shareToPeople({required String todoId, required List<String>users}){
+    _myRepo.shareTodoToUsers(todoId, users);
+    notifyListeners();
+  }
 }
 

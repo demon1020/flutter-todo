@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../resources/constants/firestore_constants.dart';
 import '../model/users.dart';
 import '/core.dart';
 
@@ -12,7 +13,7 @@ class AuthRepository{
 
   // create user obj based on firebase user
   Users? _userFromFirebaseUser(User? user) {
-    return user != null ? Users(uid: user.uid) : null;
+    return user != null ? Users(user.uid) : null;
   }
 
   // auth change user stream to custom user stream
@@ -41,9 +42,7 @@ class AuthRepository{
         print("Login Successful");
         _firestore
             .collection('users')
-            .doc(_auth.currentUser!.uid)
-            .get()
-            .then((value) => user.updateDisplayName(value['name']));
+            .add({'email': user.email,'password': 'Test@123'});
 
         return user;
       } else {
@@ -95,6 +94,11 @@ class AuthRepository{
       print(e.toString());
       return null;
     }
+  }
+
+
+  Future<QuerySnapshot<Object?>> getAllUsers() async {
+    return await FirestoreConstants.usersCollection.get();
   }
 }
 
