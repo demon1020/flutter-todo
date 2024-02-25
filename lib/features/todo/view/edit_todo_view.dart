@@ -1,8 +1,5 @@
-import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:email_sender/email_sender.dart';
 
 import '../../../core.dart';
 import '../../auth/model/users.dart';
@@ -31,17 +28,7 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
   void deactivate() {
     final editTodoViewModel =
         Provider.of<EditTodoViewModel>(context, listen: false);
-    editTodoViewModel.setLoading(false);
-    editTodoViewModel.updateTodo(
-      todoId: widget.todoId,
-      todo: Todo(
-        title: editTodoViewModel.titleController.text,
-        description: editTodoViewModel.descriptionController.text,
-        lastEditedBy: editTodoViewModel.myUserName,
-        timestamp: DateTime.now().toString().substring(0,19),
-        isEditing: false,
-      ),
-    );
+    editTodoViewModel.updateTodo(todoId: widget.todoId);
     super.deactivate();
   }
 
@@ -60,7 +47,7 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
             const SizedBox(
               width: 20,
             ),
-            Text(editTodoViewModel.loading ? 'Syncing' : 'Synced'),
+            Text(editTodoViewModel.isSyncing ? 'Syncing' : 'Synced'),
             const SizedBox(
               width: 20,
             ),
@@ -78,7 +65,7 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
               }
 
               if (!snapshot.hasData || snapshot.data == null) {
-                return Center(child: Text('Document does not exist'));
+                return Center(child: Text('Task does not exist'));
               }
 
               final DocumentSnapshot document = snapshot.data!;
@@ -97,23 +84,14 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Container(
-                        //   padding: EdgeInsets.all(5),
-                        //   decoration: ShapeDecoration(
-                        //       shape: StadiumBorder(side: BorderSide())),
-                        //   child: Text(
-                        //     'Created by : ${todo.createdBy}',
-                        //   ),
-                        // ),
-                        // SizedBox(
-                        //   width: 10,
-                        // ),
                         !editTodoViewModel.isSharing
                             ? Container(
                                 padding: EdgeInsets.all(10),
                                 decoration: ShapeDecoration(
                                   shape: StadiumBorder(
-                                    side: BorderSide(),
+                                    side: todo.isEditing
+                                        ? BorderSide(color: Colors.blue)
+                                        : BorderSide(),
                                   ),
                                 ),
                                 child: todo.isEditing
@@ -125,12 +103,11 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
                                       ),
                               )
                             : SizedBox.shrink(),
-
                         Visibility(
                           visible: editTodoViewModel.isSharing,
                           replacement: OutlinedButton(
                             onPressed:
-                                editTodoViewModel.myUserName == todo.createdBy
+                                editTodoViewModel.currentUser == todo.createdBy
                                     ? () => editTodoViewModel.setSharing(true)
                                     : () {
                                         Utils.toastMessage(
@@ -142,7 +119,7 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
                           ),
                           child: Expanded(
                             child: DropdownSearch<Users>.multiSelection(
-                              items: editTodoViewModel.dropItems,
+                              items: editTodoViewModel.dropItems.toList(),
                               dropdownButtonProps: DropdownButtonProps(
                                 icon: Icon(
                                   Icons.person_add,
@@ -152,41 +129,8 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
                                 showSearchBox: true,
                               ),
                               onChanged: (data) async {
-                                if (editTodoViewModel.myUserName ==
-                                    todo.createdBy) {
-                                  log(data.toString());
-                                  editTodoViewModel.setSharing(false);
-                                  List<String> users = [];
-                                  List<String> tempUsers = [];
-                                  for (int i = 0; i < data.length; i++) {
-                                    users.add(data[i].email.toString());
-                                    if (!todo.editors!
-                                        .contains(data[i].email)) {
-                                      tempUsers.add(data[i].email.toString());
-                                    }
-                                  }
-                                  editTodoViewModel.shareToPeople(
-                                    todoId: widget.todoId,
-                                    users: users,
-                                  );
-
-                                  EmailSender emailSender = EmailSender();
-                                  for (var email in tempUsers) {
-                                    var response =
-                                        await emailSender.sendMessage(
-                                      email,
-                                      "Todo App",
-                                      "Task : ${editTodoViewModel.titleController.text}",
-                                      "This task is shared by ${editTodoViewModel.myUserName}",
-                                    );
-                                    log(response);
-                                  }
-                                  Utils.toastMessage(
-                                      "Task Shared To : $tempUsers");
-                                } else {
-                                  Utils.toastMessage(
-                                      "You do not have permission to share this todo.");
-                                }
+                                await editTodoViewModel.share(
+                                    todo, data, widget.todoId);
                               },
                               itemAsString: (Users u) => u.email.toString(),
                               selectedItems: editTodoViewModel.dropItems
@@ -203,19 +147,7 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
                       minLines: 1,
                       maxLines: 2,
                       onChanged: (data) {
-                        editTodoViewModel.setSharing(false);
-                        editTodoViewModel.setLoading(todo.isEditing);
-                        editTodoViewModel.updateTodo(
-                          todoId: widget.todoId,
-                          todo: Todo(
-                            title: data,
-                            description:
-                                editTodoViewModel.descriptionController.text,
-                            lastEditedBy: editTodoViewModel.myUserName,
-                            timestamp: DateTime.now().toString().substring(0,19),
-                            isEditing: true,
-                          ),
-                        );
+                        editTodoViewModel.updateTodo(todoId: widget.todoId);
                       },
                       decoration: InputDecoration(
                         hintText: 'Title',
@@ -228,18 +160,7 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
                       minLines: 1,
                       maxLines: 10,
                       onChanged: (data) {
-                        editTodoViewModel.setSharing(false);
-                        editTodoViewModel.setLoading(todo.isEditing);
-                        editTodoViewModel.updateTodo(
-                          todoId: widget.todoId,
-                          todo: Todo(
-                            title: editTodoViewModel.titleController.text,
-                            description: data,
-                            lastEditedBy: editTodoViewModel.myUserName,
-                            timestamp: DateTime.now().toString().substring(0,19),
-                            isEditing: true,
-                          ),
-                        );
+                        editTodoViewModel.updateTodo(todoId: widget.todoId);
                       },
                       decoration: InputDecoration(
                         hintText: 'Description',
@@ -264,6 +185,4 @@ class _TodoViewState extends State<EditTodoView> with WidgetsBindingObserver {
       ),
     );
   }
-
-  getData(String filter) {}
 }

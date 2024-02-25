@@ -1,30 +1,54 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:todo/features/todo/repository/todo_repository.dart';
 
+import '../model/todo.dart';
 import '/core.dart';
 
 class TodoViewModel with ChangeNotifier {
   Stream<QuerySnapshot>? todosStream;
-  String myUserName = '';
+  String currentUser = '';
 
   final _myRepo = TodoRepository();
 
   init() async {
-    getUserName();
+    getCurrentUser();
     getTodos();
   }
 
-  getUserName()async{
-    myUserName = await AuthRepository().getCurrentUser().toString();
-    notifyListeners();
+  void getCurrentUser()async{
+    currentUser = AuthRepository().getCurrentUser().toString();
   }
 
   void getTodos() async {
     todosStream = await _myRepo.getTodosStream();
-    notifyListeners();
   }
+
   void deleteTodo(String todoId) async {
     await _myRepo.deleteTodo(todoId);
     notifyListeners();
+  }
+
+  void createTodo() async{
+    Todo todo = Todo(
+      title: "",
+      description: "",
+      createdBy: currentUser,
+      lastEditedBy: currentUser,
+      timestamp: DateTime.now().toString(),
+      priority: ['low'],
+      editors: [currentUser],
+      status: false,
+      isEditing: true,
+    );
+
+    Map<String, dynamic> todoMap = todo.toMap();
+    DocumentReference ref = await _myRepo.createTodo(todoMap);
+    notifyListeners();
+
+    Navigator.pushNamed(
+      arguments: ref.id,
+      navigatorKey.currentContext!,
+      RoutesName.editTodoView,
+    );
   }
 }

@@ -1,9 +1,7 @@
-import 'dart:developer';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../model/todo.dart';
-import '../repository/todo_repository.dart';
 import '../view_model/todo_view_model.dart';
 import '/core.dart';
 
@@ -17,12 +15,12 @@ class TodoView extends StatefulWidget {
 class _TodoViewState extends State<TodoView> {
   @override
   void initState() {
-    var chatProvider = Provider.of<TodoViewModel>(context, listen: false);
-    chatProvider.init();
+    var todoViewModel = Provider.of<TodoViewModel>(context, listen: false);
+    todoViewModel.init();
     super.initState();
   }
 
-  String get myUserName => AuthViewModel().getUser().toString();
+  String get currentUser => AuthViewModel().getUser().toString();
 
   @override
   Widget build(BuildContext context) {
@@ -75,95 +73,78 @@ class _TodoViewState extends State<TodoView> {
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
-            return Center(child: Text('Document does not exist'));
+            return Center(child: Text('Task does not exist'));
           }
-
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            shrinkWrap: true,
-            padding: EdgeInsets.only(top: 10),
-            // physics: NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              DocumentSnapshot document = snapshot.data!.docs[index];
-              Todo todo = Todo.fromSnapshot(document);
-              return GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(
-                    arguments: document.id,
-                    navigatorKey.currentContext!,
-                    RoutesName.editTodoView,
-                  );
-                },
-                child: Card(
-                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  child: ListTile(
-                    leading: IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        todo.createdBy == todoViewModel.myUserName
-                            ? Icons.star
-                            : Icons.people_alt_rounded,
-                        size: 30,
-                      ),
-                    ),
-                    title: Text(
-                      todo.title,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        overflow: TextOverflow.ellipsis,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Flexible(
-                      child: Text(
-                        timeago.format(DateTime.parse(todo.timestamp),
-                            locale: 'en_short'),
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          overflow: TextOverflow.ellipsis,
+          snapshot.hasData;
+          return snapshot.data!.docs.length == 0
+              ? Center(
+                  child: Text('No task available. Lets create new tasks'),
+                )
+              : ListView.builder(
+                  itemCount: snapshot.data!.docs.length,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.only(top: 10),
+                  itemBuilder: (context, index) {
+                    DocumentSnapshot document = snapshot.data!.docs[index];
+                    Todo todo = Todo.fromSnapshot(document);
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          arguments: document.id,
+                          navigatorKey.currentContext!,
+                          RoutesName.editTodoView,
+                        );
+                      },
+                      child: Card(
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        child: ListTile(
+                          leading: IconButton(
+                            onPressed: () {},
+                            icon: Icon(
+                              todo.createdBy == todoViewModel.currentUser
+                                  ? Icons.star
+                                  : Icons.people_alt_rounded,
+                              size: 30,
+                            ),
+                          ),
+                          title: Text(
+                            todo.title,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              overflow: TextOverflow.ellipsis,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                            ),
+                          ),
+                          subtitle: Flexible(
+                            child: Text(
+                              timeago.format(DateTime.parse(todo.timestamp),
+                                  locale: 'en_short'),
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          trailing: IconButton(
+                            onPressed: () {
+                              todoViewModel.deleteTodo(document.id);
+                            },
+                            icon: Icon(Icons.delete),
+                          ),
                         ),
                       ),
-                    ),
-                    trailing: IconButton(
-                      onPressed: () {
-                        todoViewModel.deleteTodo(document.id);
-                      },
-                      icon: Icon(Icons.delete),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
+                    );
+                  },
+                );
         },
       ),
       floatingActionButton: SizedBox(
         height: 60,
         child: ElevatedButton(
           onPressed: () async {
-            late final TodoRepository _myRepo = TodoRepository();
-            Todo todo = Todo(
-              title: "",
-              description: "",
-              createdBy: myUserName,
-              lastEditedBy: myUserName,
-              timestamp: DateTime.now().toString(),
-              priority: ['low'],
-              editors: [myUserName],
-              status: false,
-              isEditing: true,
-            );
-            Map<String, dynamic> todoMap = todo.toMap();
-
-            DocumentReference ref = await _myRepo.createTodo(todoMap);
-            log(ref.id);
-
-            Navigator.pushNamed(
-              arguments: ref.id,
-              navigatorKey.currentContext!,
-              RoutesName.editTodoView,
-            );
+            todoViewModel.createTodo();
           },
           child: Row(
             mainAxisSize: MainAxisSize.min,

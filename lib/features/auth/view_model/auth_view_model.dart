@@ -1,15 +1,18 @@
 import '/core.dart';
 
 class AuthViewModel with ChangeNotifier {
-
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   FocusNode emailFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
-
+  bool loading = false;
+  bool isSignIn = true;
   final _myRepo = AuthRepository();
 
-  bool loading = false;
+  toggleSignIn(){
+    isSignIn = !isSignIn;
+    notifyListeners();
+  }
 
   setLoading(isLoading){
     loading = isLoading;
@@ -26,20 +29,40 @@ class AuthViewModel with ChangeNotifier {
     var response = await _myRepo.signIn(email: email, password: password);
 
     if(response == null){
-      Utils.flushBarErrorMessage("Failed to sign in\nPlease check your credentials");
+      Utils.flushBarErrorMessage("User does not exists\nPlease check your credentials");
       setLoading(false);
       return;
     }
 
-    // final userPreference = Provider.of<UserViewModel>(
-    //     navigatorKey.currentContext!,
-    //     listen: false);
-    //
-    // userPreference.saveUser(UserModel(token: response.uid));
     Utils.snackBar('Login Successfully');
     Navigator.pushNamed(navigatorKey.currentContext!, RoutesName.todoView);
     setLoading(false);
     notifyListeners();
+  }
+
+  Future<void> signUpWithEmailPassword({required String email, password}) async {
+    setLoading(true);
+    var result = await _myRepo.signIn(email: email, password: password);
+    if(result == null){
+      var response = await _myRepo.signUp(email: email, password: password);
+
+      if(response == null){
+        Utils.flushBarErrorMessage("Failed to sign Up\nPlease check your credentials");
+        setLoading(false);
+        return;
+      }
+
+      Utils.snackBar('Account created and Login Successfully');
+      Navigator.pushNamed(navigatorKey.currentContext!, RoutesName.todoView);
+      setLoading(false);
+      notifyListeners();
+    }else{
+      Utils.snackBar('User Exists and Login Successfully');
+      Navigator.pushNamed(navigatorKey.currentContext!, RoutesName.todoView);
+      setLoading(false);
+      notifyListeners();
+    }
+
   }
 
   void disposeData(){

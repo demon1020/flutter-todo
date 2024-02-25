@@ -1,3 +1,4 @@
+import '../../../utils/validator.dart';
 import '/core.dart';
 
 class AuthView extends StatefulWidget {
@@ -8,6 +9,8 @@ class AuthView extends StatefulWidget {
 }
 
 class _AuthViewState extends State<AuthView> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     var authViewModel = Provider.of<AuthViewModel>(context);
@@ -15,7 +18,7 @@ class _AuthViewState extends State<AuthView> {
       body: Container(
         margin: const EdgeInsets.all(10),
         child: Form(
-          // key: provider.formKey,
+          key: _formKey,
           autovalidateMode: AutovalidateMode.disabled,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -39,7 +42,7 @@ class _AuthViewState extends State<AuthView> {
                 hintText: 'Email',
                 obscureText: false,
                 textInputType: TextInputType.emailAddress,
-                // validator: (email) => Validator.validateEmail(email),
+                validator: (email) => Validator.validateEmail(email),
               ),
               const SizedBox(height: 10),
               AppTextField(
@@ -47,7 +50,7 @@ class _AuthViewState extends State<AuthView> {
                 hintText: 'Password',
                 obscureText: true,
                 showSuffixIcon: true,
-                // validator: (pass) => Validator.validatePassword(pass),
+                validator: (pass) => Validator.validatePasswords(pass),
               ),
               const SizedBox(height: 20),
               Padding(
@@ -64,14 +67,23 @@ class _AuthViewState extends State<AuthView> {
               ),
               const SizedBox(height: 20),
               AppButton(
-                text: "Sign In",
+                text: authViewModel.isSignIn ? "Sign In" : "Sign Up",
                 isLoading: authViewModel.loading,
                 onTap: () {
-                  authViewModel.signInWithEmailPassword(
-                    email: authViewModel.emailController.text.toString(),
-                    password: authViewModel.passwordController.text.toString(),
-                  );
-                },
+                  if (_formKey.currentState!.validate()) {
+                    if(authViewModel.isSignIn){
+                      authViewModel.signInWithEmailPassword(
+                        email: authViewModel.emailController.text.toString(),
+                        password: authViewModel.passwordController.text.toString(),
+                      );
+                    }else{
+                      authViewModel.signUpWithEmailPassword(
+                        email: authViewModel.emailController.text.toString(),
+                        password: authViewModel.passwordController.text.toString(),
+                      );
+                    }
+                  }
+                }
               ),
               const SizedBox(height: 20),
               Row(
@@ -84,7 +96,7 @@ class _AuthViewState extends State<AuthView> {
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
-                      // provider.toggle();
+                      authViewModel.toggleSignIn();
                     },
                     child: Text(
                       "Sign Up Now",
